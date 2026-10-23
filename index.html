@@ -37,7 +37,7 @@ details.sec>summary h2:after{content:"▾";color:#aaa}details.sec:not([open])>su
   <div class="jump" id="j"><button id="b" type="button" disabled>提交</button><span id="jl"></span></div>
   <div class="ok" id="m"></div>
   <div id="list"><div class="empty">加载中…</div></div>
-  <div class="ver" id="v">v2.1.0</div>
+  <div class="ver" id="v">v2.2.0</div>
 </div>
 <script>
 var DATE = null;
@@ -75,7 +75,7 @@ var m0=location.hash.match(/k=([^&]+)/); if(m0){localStorage.setItem('ck_key',m0
 var KEY=localStorage.getItem('ck_key')||'';
 var ENC={"s":"QZxu46yF8aEVnjg/8+S02Q==","iv":"frkpEjPxRTGNejg8","ct":"z4CaCnH3OA2VkbE5QBZc5SANN2Mn2JCKNnGTYi0T6C9dhgMwsQLN9lg9lJxHMRoG"};
 function b64(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0);});}
-async function unlock(){for(;;){var pw=prompt('请输入清单通行密码');if(pw===null)return false;try{var km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);var dk=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(ENC.s),iterations:200000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(ENC.iv)},dk,b64(ENC.ct));KEY=new TextDecoder().decode(pt);localStorage.setItem('ck_key',KEY);return true;}catch(err){alert('密码不对，请再试');}}}
+function unlock(){return new Promise(function(res){var m=document.getElementById('m');m.className='ok';m.innerHTML='请输入通行密码：<input id="pw" type="password" style="font-size:16px;padding:6px;margin:6px"><button id="pwb" style="font-size:16px;padding:6px 12px">确定</button>';var go=async function(){var pw=document.getElementById('pw').value;try{var km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);var dk=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(ENC.s),iterations:200000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(ENC.iv)},dk,b64(ENC.ct));KEY=new TextDecoder().decode(pt);localStorage.setItem('ck_key',KEY);m.textContent='';res(true);}catch(err){alert('密码不对，请再试');}};document.getElementById('pwb').onclick=go;document.getElementById('pw').onkeydown=function(e){if(e.key==='Enter')go();};});}
 var dirty=false;
 try{var c=JSON.parse(localStorage.getItem('ck_data')||'null'); if(c&&c.date===new Date(Date.now()+8*3600e3).toISOString().slice(0,10)) render(c);}catch(e){}
 function load(){
@@ -84,7 +84,7 @@ function load(){
     if(d.error) throw new Error(d.error);
     localStorage.setItem('ck_data',JSON.stringify(d));
     if(!dirty) render(d);
-    document.getElementById('v').textContent=d.version+' · web v2.1.0';
+    document.getElementById('v').textContent=d.version+' · web v2.2.0';
   }).catch(fail);
 }
 document.addEventListener('input',function(){dirty=true;});
