@@ -73,6 +73,9 @@ function fail(e){var m=document.getElementById('m');m.className='ok err';m.textC
 var API='https://script.google.com/macros/s/AKfycbyv7HiV-thKgIHCGUKjxyCJAXZtFUll1uORV1aTd_zawTghcceLz2IBvEKHtoGTShpk/exec';
 var m0=location.hash.match(/k=([^&]+)/); if(m0){localStorage.setItem('ck_key',m0[1]); history.replaceState(null,'',location.pathname);}
 var KEY=localStorage.getItem('ck_key')||'';
+var ENC={"s":"QZxu46yF8aEVnjg/8+S02Q==","iv":"frkpEjPxRTGNejg8","ct":"z4CaCnH3OA2VkbE5QBZc5SANN2Mn2JCKNnGTYi0T6C9dhgMwsQLN9lg9lJxHMRoG"};
+function b64(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0);});}
+async function unlock(){for(;;){var pw=prompt('请输入清单通行密码');if(pw===null)return false;try{var km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);var dk=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(ENC.s),iterations:200000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(ENC.iv)},dk,b64(ENC.ct));KEY=new TextDecoder().decode(pt);localStorage.setItem('ck_key',KEY);return true;}catch(err){alert('密码不对，请再试');}}}
 var dirty=false;
 try{var c=JSON.parse(localStorage.getItem('ck_data')||'null'); if(c&&c.date===new Date(Date.now()+8*3600e3).toISOString().slice(0,10)) render(c);}catch(e){}
 function load(){
@@ -86,7 +89,7 @@ function load(){
 }
 document.addEventListener('input',function(){dirty=true;});
 document.addEventListener('change',function(){dirty=true;});
-load();
+(KEY?Promise.resolve(true):unlock()).then(function(ok){if(ok)load();});
 document.getElementById('b').onclick = function(){
   var items = Array.prototype.map.call(document.querySelectorAll('.item'), function(d){
     return {id:d.getAttribute('data-id'), done:d.querySelector('input').checked, note:d.querySelector('textarea').value};
