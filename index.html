@@ -38,7 +38,7 @@ details.sec>summary h2:after{content:"▾";color:#aaa}details.sec:not([open])>su
   <div class="jump" id="j"><button id="b" type="button" disabled>提交</button><span id="jl"></span></div>
   <div class="ok" id="m"></div>
   <div id="list"><div class="empty">加载中…</div></div>
-  <div class="ver" id="v">v2.4.0</div>
+  <div class="ver" id="v">v2.5.0</div>
 </div>
 <script>
 var DATE = null;
@@ -49,7 +49,7 @@ function render(d){
   document.getElementById('t').textContent = '今日清单 · ' + d.label;
   document.getElementById('v').textContent = d.version;
   var groups = [], by = {};
-  d.items.forEach(function(it){
+  d.items.filter(function(it){return !it.done;}).forEach(function(it){
     var k = it.section || '其他';
     if (!by[k]){ by[k] = []; groups.push(k); }
     by[k].push(it);
@@ -89,7 +89,7 @@ function load(){
     if(d.error) throw new Error(d.error);
     localStorage.setItem('ck_data',JSON.stringify(d));
     if(!dirty) render(d);
-    document.getElementById('v').textContent=d.version+' · web v2.4.0';
+    document.getElementById('v').textContent=d.version+' · web v2.5.0';
   }).catch(fail);
 }
 document.addEventListener('input',function(){dirty=true;saveDraft();});
