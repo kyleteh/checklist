@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta name="robots" content="noindex">
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{margin:0;background:#f2f3f5;font-family:-apple-system,"PingFang SC","Noto Sans CJK SC",sans-serif;font-size:18px;color:#222}
+.card{max-width:1280px;margin:16px auto;background:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+h1{font-size:24px;text-align:center;margin:4px 0 12px}h2{font-size:19px;color:#1677ff;margin:22px 0 8px;border-bottom:1px solid #eee;padding-bottom:6px}
+.item{margin:12px 0}label{display:flex;gap:12px;align-items:flex-start;line-height:1.45;cursor:pointer}
+input[type=checkbox]{width:28px;height:28px;flex:none;margin:0;accent-color:#1677ff}
+textarea{width:100%;box-sizing:border-box;margin-top:8px;font-size:17px;padding:10px 12px;border:1px solid #ddd;border-radius:10px;background:#fafafa;min-height:46px;font-family:inherit}
+button{width:100%;height:56px;font-size:20px;border:0;border-radius:14px;background:#1677ff;color:#fff;margin-top:22px}
+button:disabled{opacity:.6}
+.ok{text-align:center;color:#18a058;font-size:20px;margin-top:14px;min-height:24px}
+.ttl{font-weight:700;line-height:1.45;white-space:pre-wrap}.det{font-size:15px;color:#888;line-height:1.45;white-space:pre-wrap;margin-top:2px}.chk{margin-top:8px;align-items:center;color:#555}
+.err{color:#d03050}.empty{text-align:center;color:#888;margin:24px 0}
+.ver{text-align:center;color:#bbb;font-size:12px;margin-top:10px}
+.jump{position:sticky;top:0;z-index:5;background:#fff;display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 10px;border-bottom:1px solid #eee}
+.jump a{flex:none;font-size:15px;text-decoration:none;color:#1677ff;background:#eef4ff;border-radius:14px;padding:4px 10px}
+@media(max-width:759px){.jump{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -18px;padding:8px 18px 10px}.jump a{padding:8px 14px;font-size:16px}}
+#list{display:grid;grid-template-columns:1fr;gap:14px;margin-top:10px}
+@media(min-width:760px){#list{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}}
+details.sec{background:#fafbfc;border:1px solid #eee;border-radius:14px;padding:4px 14px 10px;scroll-margin-top:60px}
+details.sec>summary{list-style:none;cursor:pointer}details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary h2{display:flex;justify-content:space-between;margin:10px 0 4px}
+details.sec>summary h2:after{content:"▾";color:#aaa}details.sec:not([open])>summary h2:after{content:"▸"}
+.cnt{font-size:14px;color:#999;font-weight:400;margin-left:auto;margin-right:8px}
+#jl{display:contents}.jump #b{width:auto;margin:0;padding:8px 16px;font-size:16px;flex:0 0 auto}.jump #b:disabled{opacity:.5}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1 id="t">今日清单</h1>
+  <div class="jump" id="j"><button id="b" type="button" disabled>提交</button><span id="jl"></span></div>
+  <div class="ok" id="m"></div>
+  <div id="list"><div class="empty">加载中…</div></div>
+  <div class="ver" id="v">v2.0.0</div>
+</div>
+<script>
+var DATE = null;
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function nl(s){return String(s==null?'':s).replace(/\r\n?/g,'\n').replace(/\\n/g,'\n');}
+function render(d){
+  DATE = d.date;
+  document.getElementById('t').textContent = '今日清单 · ' + d.label;
+  document.getElementById('v').textContent = d.version;
+  var groups = [], by = {};
+  d.items.forEach(function(it){
+    var k = it.section || '其他';
+    if (!by[k]){ by[k] = []; groups.push(k); }
+    by[k].push(it);
+  });
+  var out = [], jump = [];
+  groups.forEach(function(sec, gi){
+    var its = by[sec], done = its.filter(function(x){return x.done;}).length;
+    jump.push('<a href="#s'+gi+'">'+esc(sec)+' '+its.length+'</a>');
+    out.push('<details class="sec" open id="s'+gi+'"><summary><h2>'+esc(sec)+'<span class="cnt">'+done+'/'+its.length+'</span></h2></summary>');
+    its.forEach(function(it){
+      var ttl = nl(it.title!=null?it.title:it.text), det = nl(it.detail||'').replace(/^\n+|\n+$/g,'');
+      out.push('<div class="item" data-id="'+esc(it.id)+'"><div class="ttl">'+esc(ttl)+'</div>'+(det?'<div class="det">'+esc(det)+'</div>':'')+'<label class="chk"><input type="checkbox"'+(it.done?' checked':'')+'><span>完成</span></label><textarea placeholder="备注（可空）">'+esc(it.note||'')+'</textarea></div>');
+    });
+    out.push('</details>');
+  });
+  document.getElementById('jl').innerHTML = groups.length > 1 ? jump.join('') : '';
+  document.getElementById('list').innerHTML = out.length ? out.join('') : '<div class="empty">今天还没有清单</div>';
+  document.querySelectorAll('.jump a').forEach(function(a){ a.onclick = function(e){ e.preventDefault(); var t=document.querySelector(a.getAttribute('href')); if(t){ t.open = true; var j=document.querySelector('.jump'); var off=j?j.offsetHeight+6:0; window.scrollTo({top:t.getBoundingClientRect().top+window.pageYOffset-off,behavior:'smooth'}); } return false; }; });
+  document.getElementById('b').disabled = !d.items.length;
+}
+function fail(e){var m=document.getElementById('m');m.className='ok err';m.textContent='出错了：'+(e&&e.message||e)+'，请重试';document.getElementById('b').disabled=false;}
+var API='https://script.google.com/macros/s/AKfycbyv7HiV-thKgIHCGUKjxyCJAXZtFUll1uORV1aTd_zawTghcceLz2IBvEKHtoGTShpk/exec';
+var m0=location.hash.match(/k=([^&]+)/); if(m0){localStorage.setItem('ck_key',m0[1]); history.replaceState(null,'',location.pathname);}
+var KEY=localStorage.getItem('ck_key')||'';
+var dirty=false;
+try{var c=JSON.parse(localStorage.getItem('ck_data')||'null'); if(c&&c.date===new Date(Date.now()+8*3600e3).toISOString().slice(0,10)) render(c);}catch(e){}
+function load(){
+  if(!KEY){fail('缺少密钥，请用完整链接打开');return;}
+  fetch(API+'?api=1&key='+encodeURIComponent(KEY)).then(function(r){return r.json();}).then(function(d){
+    if(d.error) throw new Error(d.error);
+    localStorage.setItem('ck_data',JSON.stringify(d));
+    if(!dirty) render(d);
+    document.getElementById('v').textContent=d.version+' · web v2.0.0';
+  }).catch(fail);
+}
+document.addEventListener('input',function(){dirty=true;});
+document.addEventListener('change',function(){dirty=true;});
+load();
+document.getElementById('b').onclick = function(){
+  var items = Array.prototype.map.call(document.querySelectorAll('.item'), function(d){
+    return {id:d.getAttribute('data-id'), done:d.querySelector('input').checked, note:d.querySelector('textarea').value};
+  });
+  var m = document.getElementById('m'), b = this;
+  m.className='ok'; m.textContent='提交中…'; b.disabled=true;
+  fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:KEY,date:DATE,items:items})})
+    .then(function(r){return r.json();}).then(function(d){ if(d.error) throw new Error(d.error); m.textContent='已收到 ✓'; b.disabled=false; dirty=false; localStorage.removeItem('ck_data'); load(); }).catch(fail);
+};
+</script>
+</body>
+</html>
