@@ -37,7 +37,7 @@ details.sec>summary h2:after{content:"▾";color:#aaa}details.sec:not([open])>su
   <div class="jump" id="j"><button id="b" type="button" disabled>提交</button><span id="jl"></span></div>
   <div class="ok" id="m"></div>
   <div id="list"><div class="empty">加载中…</div></div>
-  <div class="ver" id="v">v2.2.0</div>
+  <div class="ver" id="v">v2.3.0</div>
 </div>
 <script>
 var DATE = null;
@@ -84,7 +84,7 @@ function load(){
     if(d.error) throw new Error(d.error);
     localStorage.setItem('ck_data',JSON.stringify(d));
     if(!dirty) render(d);
-    document.getElementById('v').textContent=d.version+' · web v2.2.0';
+    document.getElementById('v').textContent=d.version+' · web v2.3.0';
   }).catch(fail);
 }
 document.addEventListener('input',function(){dirty=true;});
@@ -96,8 +96,14 @@ document.getElementById('b').onclick = function(){
   });
   var m = document.getElementById('m'), b = this;
   m.className='ok'; m.textContent='提交中…'; b.disabled=true;
-  fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:KEY,date:DATE,items:items})})
-    .then(function(r){return r.json();}).then(function(d){ if(d.error) throw new Error(d.error); m.textContent='已收到 ✓'; b.disabled=false; dirty=false; localStorage.removeItem('ck_data'); load(); }).catch(fail);
+  var body=JSON.stringify({key:KEY,date:DATE,items:items});
+  function send(n){
+    var ctl=new AbortController(); var t=setTimeout(function(){ctl.abort();},25000);
+    return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:body,signal:ctl.signal,cache:'no-store'})
+      .then(function(r){clearTimeout(t);return r.json();})
+      .catch(function(e){clearTimeout(t); if(n<3){m.textContent='网络不稳，重试第 '+n+' 次…'; return new Promise(function(r){setTimeout(r,1500*n);}).then(function(){return send(n+1);});} throw new Error('网络失败（'+(e.name==='AbortError'?'超时':e.message)+'）');});
+  }
+  send(1).then(function(d){ if(d.error) throw new Error(d.error); m.textContent='已收到 ✓ '+new Date().toTimeString().slice(0,5); b.disabled=false; dirty=false; localStorage.removeItem('ck_data'); load(); }).catch(fail);
 };
 </script>
 </body>
