@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache">
 <meta name="robots" content="noindex">
 <base target="_top">
 <meta charset="utf-8">
@@ -37,7 +38,7 @@ details.sec>summary h2:after{content:"▾";color:#aaa}details.sec:not([open])>su
   <div class="jump" id="j"><button id="b" type="button" disabled>提交</button><span id="jl"></span></div>
   <div class="ok" id="m"></div>
   <div id="list"><div class="empty">加载中…</div></div>
-  <div class="ver" id="v">v2.3.0</div>
+  <div class="ver" id="v">v2.4.0</div>
 </div>
 <script>
 var DATE = null;
@@ -68,7 +69,11 @@ function render(d){
   document.getElementById('list').innerHTML = out.length ? out.join('') : '<div class="empty">今天还没有清单</div>';
   document.querySelectorAll('.jump a').forEach(function(a){ a.onclick = function(e){ e.preventDefault(); var t=document.querySelector(a.getAttribute('href')); if(t){ t.open = true; var j=document.querySelector('.jump'); var off=j?j.offsetHeight+6:0; window.scrollTo({top:t.getBoundingClientRect().top+window.pageYOffset-off,behavior:'smooth'}); } return false; }; });
   document.getElementById('b').disabled = !d.items.length;
+  applyDraft();
 }
+function dk(){return 'ck_draft_'+DATE;}
+function saveDraft(){var o={};document.querySelectorAll('.item').forEach(function(d){var c=d.querySelector('input').checked,n=d.querySelector('textarea').value;if(c||n)o[d.getAttribute('data-id')]={done:c,note:n};});localStorage.setItem(dk(),JSON.stringify(o));}
+function applyDraft(){try{var o=JSON.parse(localStorage.getItem(dk())||'{}');document.querySelectorAll('.item').forEach(function(d){var x=o[d.getAttribute('data-id')];if(x){d.querySelector('input').checked=x.done;d.querySelector('textarea').value=x.note;}});}catch(e){}}
 function fail(e){var m=document.getElementById('m');m.className='ok err';m.textContent='出错了：'+(e&&e.message||e)+'，请重试';document.getElementById('b').disabled=false;}
 var API='https://script.google.com/macros/s/AKfycbyv7HiV-thKgIHCGUKjxyCJAXZtFUll1uORV1aTd_zawTghcceLz2IBvEKHtoGTShpk/exec';
 var m0=location.hash.match(/k=([^&]+)/); if(m0){localStorage.setItem('ck_key',m0[1]); history.replaceState(null,'',location.pathname);}
@@ -84,11 +89,11 @@ function load(){
     if(d.error) throw new Error(d.error);
     localStorage.setItem('ck_data',JSON.stringify(d));
     if(!dirty) render(d);
-    document.getElementById('v').textContent=d.version+' · web v2.3.0';
+    document.getElementById('v').textContent=d.version+' · web v2.4.0';
   }).catch(fail);
 }
-document.addEventListener('input',function(){dirty=true;});
-document.addEventListener('change',function(){dirty=true;});
+document.addEventListener('input',function(){dirty=true;saveDraft();});
+document.addEventListener('change',function(){dirty=true;saveDraft();});
 (KEY?Promise.resolve(true):unlock()).then(function(ok){if(ok)load();});
 document.getElementById('b').onclick = function(){
   var items = Array.prototype.map.call(document.querySelectorAll('.item'), function(d){
@@ -103,7 +108,7 @@ document.getElementById('b').onclick = function(){
       .then(function(r){clearTimeout(t);return r.json();})
       .catch(function(e){clearTimeout(t); if(n<3){m.textContent='网络不稳，重试第 '+n+' 次…'; return new Promise(function(r){setTimeout(r,1500*n);}).then(function(){return send(n+1);});} throw new Error('网络失败（'+(e.name==='AbortError'?'超时':e.message)+'）');});
   }
-  send(1).then(function(d){ if(d.error) throw new Error(d.error); m.textContent='已收到 ✓ '+new Date().toTimeString().slice(0,5); b.disabled=false; dirty=false; localStorage.removeItem('ck_data'); load(); }).catch(fail);
+  send(1).then(function(d){ if(d.error) throw new Error(d.error); m.textContent='已收到 ✓ '+new Date().toTimeString().slice(0,5); b.disabled=false; dirty=false; localStorage.removeItem(dk()); localStorage.removeItem('ck_data'); load(); }).catch(fail);
 };
 </script>
 </body>
